@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Secrets
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Backups
+*.backup
+*~
+
+# Local uploaded documents and vector indexes
+data/uploads/
+data/indexes/
+data/documents.json
+
+# macOS
+.DS_Store
