@@ -8,7 +8,7 @@ import streamlit as st
 
 # ----------------------------- Configuration -----------------------------
 
-_DEFAULT_API_URL = "http://127.0.0.1:8001"
+_DEFAULT_API_URL = "https://rag-based-docubot.onrender.com"
 
 
 def _get_api_url():
