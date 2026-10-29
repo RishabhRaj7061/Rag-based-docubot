@@ -1,4 +1,4 @@
-
+from functools import lru_cache
 from pathlib import Path
 
 from langchain_community.vectorstores import FAISS
@@ -8,7 +8,10 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 INDEX_DIR = BASE_DIR / "data" / "indexes"
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
+BATCH_SIZE = 16
 
+
+@lru_cache(maxsize=1)
 def get_embeddings():
     return HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -39,11 +42,24 @@ def save_document_vectors(document_id: str, chunks: list[dict]) -> dict:
     if not texts:
         raise ValueError("No valid text chunks found.")
 
-    vector_store = FAISS.from_texts(
-        texts=texts,
-        embedding=get_embeddings(),
-        metadatas=metadatas,
-    )
+    embeddings = get_embeddings()
+    vector_store = None
+
+    for start in range(0, len(texts), BATCH_SIZE):
+        batch_texts = texts[start:start + BATCH_SIZE]
+        batch_metadatas = metadatas[start:start + BATCH_SIZE]
+
+        if vector_store is None:
+            vector_store = FAISS.from_texts(
+                texts=batch_texts,
+                embedding=embeddings,
+                metadatas=batch_metadatas,
+            )
+        else:
+            vector_store.add_texts(
+                texts=batch_texts,
+                metadatas=batch_metadatas,
+            )
 
     index_path = INDEX_DIR / document_id
     vector_store.save_local(str(index_path))

@@ -33,7 +33,7 @@ def save_documents(documents: list[dict]) -> None:
 
 
 def process_pdf_file(filename: str, content: bytes) -> dict:
-    """Save a PDF, extract its text, and record its metadata."""
+    """Save a PDF, extract text, create embeddings, and record metadata."""
     document_id = str(uuid.uuid4())
     safe_filename = Path(filename).name
 
@@ -44,6 +44,7 @@ def process_pdf_file(filename: str, content: bytes) -> dict:
     pdf_path.write_bytes(content)
 
     try:
+        # Extract text and split it into chunks.
         pages = extract_text_from_pdf(str(pdf_path))
         chunks = chunk_pages(pages)
 
@@ -52,12 +53,17 @@ def process_pdf_file(filename: str, content: bytes) -> dict:
                 "No readable text found. The PDF may be scanned or image-only."
             )
 
+        # Generate embeddings and save the FAISS index.
+        vector_info = save_document_vectors(document_id, chunks)
+
+        # Save document metadata.
         document = {
             "document_id": document_id,
             "filename": safe_filename,
             "stored_filename": pdf_path.name,
             "page_count": len(pages),
             "chunk_count": len(chunks),
+            "embedding_dimensions": vector_info["embedding_dimensions"],
             "status": "uploaded",
         }
 
@@ -68,8 +74,12 @@ def process_pdf_file(filename: str, content: bytes) -> dict:
         return {
             **document,
             "pages_with_text": len(pages),
+            "vectors_created": vector_info["vectors_created"],
         }
 
     except Exception:
+        # Remove files created for this failed upload.
         pdf_path.unlink(missing_ok=True)
+        (INDEX_DIR / f"{document_id}.faiss").unlink(missing_ok=True)
+        (INDEX_DIR / f"{document_id}_chunks.json").unlink(missing_ok=True)
         raise

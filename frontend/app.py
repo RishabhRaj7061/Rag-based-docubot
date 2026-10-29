@@ -8,10 +8,25 @@ import streamlit as st
 
 # ----------------------------- Configuration -----------------------------
 
-API_BASE_URL = os.getenv(
-    "DOCUBOT_API_URL",
-    "http://127.0.0.1:8000",
-).rstrip("/")
+_DEFAULT_API_URL = "http://127.0.0.1:8001"
+
+
+def _get_api_url():
+    env_url = os.getenv("DOCUBOT_API_URL")
+    if env_url:
+        return env_url.rstrip("/")
+
+    try:
+        secret_url = st.secrets.get("DOCUBOT_API_URL")
+        if secret_url:
+            return str(secret_url).rstrip("/")
+    except Exception:
+        pass
+
+    return _DEFAULT_API_URL
+
+
+_URL = _get_api_url()
 REQUEST_TIMEOUT = 180
 
 st.set_page_config(
@@ -188,7 +203,7 @@ def api_request(method: str, path: str, **kwargs: Any) -> Any:
 
     response = requests.request(
         method,
-        f"{API_BASE_URL}{path}",
+        f"{_URL}{path}",
         **kwargs,
     )
     response.raise_for_status()
@@ -331,7 +346,7 @@ with st.sidebar:
     except Exception:
         st.session_state["api_status"] = "offline"
         st.error("Backend unavailable", icon="🔴")
-        st.caption(f"Expected API: {API_BASE_URL}")
+        st.caption(f"Expected API: {_URL}")
 
     if st.button("↻ Refresh documents", use_container_width=True):
         st.rerun()
@@ -572,7 +587,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.caption("🔒 Your files stay in this project's local data folder.")
-    st.caption(f"Backend: {API_BASE_URL}")
+    st.caption(f"Backend: {_URL}")
 
 # ----------------------------- Main content -------------------------------
 
