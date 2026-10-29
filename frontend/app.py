@@ -381,7 +381,7 @@ with st.sidebar:
                     "POST",
                     "/documents/upload",
                     files={
-                        "files": (
+                        "file": (
                             uploaded.name,
                             uploaded.getvalue(),
                             uploaded.type or "application/octet-stream",
