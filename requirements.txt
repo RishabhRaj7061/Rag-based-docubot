@@ -12,3 +12,4 @@ faiss-cpu
 groq
 python-dotenv
 python-docx
+pytesseract
