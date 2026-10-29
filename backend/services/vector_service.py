@@ -1,3 +1,4 @@
+
 from functools import lru_cache
 from pathlib import Path
 
@@ -8,13 +9,19 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 INDEX_DIR = BASE_DIR / "data" / "indexes"
 INDEX_DIR.mkdir(parents=True, exist_ok=True)
 
-BATCH_SIZE = 16
+# Smaller batches reduce peak memory usage during embedding.
+BATCH_SIZE = 4
 
 
 @lru_cache(maxsize=1)
 def get_embeddings():
     return HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={
+            "batch_size": BATCH_SIZE,
+            "normalize_embeddings": True,
+        },
     )
 
 
